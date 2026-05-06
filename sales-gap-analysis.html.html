@@ -1,0 +1,442 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans);font-size:14px}
+.dash{padding:.75rem 0}
+.tab-bar{display:flex;gap:6px;margin-bottom:1.25rem;border-bottom:.5px solid var(--color-border-tertiary);padding-bottom:.75rem}
+.tab-btn{padding:7px 14px;font-size:12px;font-weight:500;border:.5px solid transparent;border-radius:var(--border-radius-md);background:transparent;color:var(--color-text-secondary);cursor:pointer}
+.tab-btn.active{background:var(--color-background-secondary);color:var(--color-text-primary);border-color:var(--color-border-secondary)}
+.section{display:none}.section.active{display:block}
+.filter-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:1.25rem;padding:.75rem 1rem;background:var(--color-background-secondary);border-radius:var(--border-radius-md)}
+.filter-row label{font-size:11px;color:var(--color-text-secondary);font-weight:500}
+.filter-row select{font-size:12px;padding:5px 8px;border-radius:var(--border-radius-md);border:.5px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-primary)}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:1.25rem}
+.kpi{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:.875rem 1rem}
+.kpi-label{font-size:11px;color:var(--color-text-secondary);margin-bottom:4px}
+.kpi-val{font-size:24px;font-weight:500;line-height:1.1}
+.kpi-sub{font-size:11px;color:var(--color-text-tertiary);margin-top:3px}
+.chart-card{background:var(--color-background-primary);border:.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1rem 1.25rem;margin-bottom:1rem}
+.chart-title{font-size:12px;font-weight:500;color:var(--color-text-secondary);margin-bottom:.75rem;text-transform:uppercase;letter-spacing:.04em}
+.legend{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px;font-size:11px;color:var(--color-text-secondary)}
+.legend span{display:flex;align-items:center;gap:4px}
+.ld{width:9px;height:9px;border-radius:2px;flex-shrink:0}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.bar-row{margin-bottom:12px}
+.bar-label{display:flex;justify-content:space-between;font-size:11px;color:var(--color-text-secondary);margin-bottom:4px}
+.bar-track{height:8px;background:var(--color-background-secondary);border-radius:99px;overflow:hidden}
+.bar-fill{height:100%;border-radius:99px}
+.bar-nums{display:flex;justify-content:space-between;font-size:10px;color:var(--color-text-tertiary);margin-top:3px}
+.aging-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:1rem}
+.aging-card{border-radius:var(--border-radius-md);padding:.75rem;text-align:center}
+.aging-num{font-size:20px;font-weight:500}
+.aging-lbl{font-size:10px;margin-top:3px}
+.badge{display:inline-block;font-size:10px;padding:2px 7px;border-radius:99px;font-weight:500}
+@media(max-width:560px){.two-col{grid-template-columns:1fr}}
+</style>
+
+<div class="dash">
+<h2 class="sr-only">Sales leads interactive dashboard for 6 representatives</h2>
+
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab('overview')">Sales overview</button>
+  <button class="tab-btn" onclick="switchTab('contact')">Contact activity</button>
+  <button class="tab-btn" onclick="switchTab('gap')">Gap analysis</button>
+  <button class="tab-btn" onclick="switchTab('aging')">Aging & timeline</button>
+</div>
+
+<!-- ══════ TAB 1: OVERVIEW ══════ -->
+<div class="section active" id="tab-overview">
+  <div class="filter-row">
+    <label>Rep</label>
+    <select id="ov-rep" onchange="renderOverview()">
+      <option value="all">All representatives</option>
+      <option value="Ahmed Ali">Ahmed Ali</option>
+      <option value="Ahmed Abd El Razek">Ahmed Abd El Razek</option>
+      <option value="Ahmed Magdy">Ahmed Magdy</option>
+      <option value="Hassan Nasser">Hassan Nasser</option>
+      <option value="Hassan Gamal">Hassan Gamal</option>
+      <option value="Sameh Ali">Sameh Ali</option>
+    </select>
+    <label>Status</label>
+    <select id="ov-status" onchange="renderOverview()">
+      <option value="all">All statuses</option>
+      <option>Pre-Lead</option><option>Lead</option><option>In Progress</option>
+      <option>Prospect</option><option>Hot Prospect</option><option>Lost</option><option>Junk</option>
+    </select>
+  </div>
+  <div class="kpi-grid" id="ov-kpis"></div>
+  <div class="chart-card">
+    <div class="chart-title">Clients per representative</div>
+    <div style="position:relative;width:100%;height:220px"><canvas id="c-repbar" role="img" aria-label="Bar chart clients per rep"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">Status breakdown (stacked)</div>
+    <div class="legend" id="ov-legend"></div>
+    <div style="position:relative;width:100%;height:220px"><canvas id="c-stack" role="img" aria-label="Stacked bar chart status breakdown"></canvas></div>
+  </div>
+</div>
+
+<!-- ══════ TAB 2: CONTACT ACTIVITY ══════ -->
+<div class="section" id="tab-contact">
+  <div class="filter-row">
+    <label>Rep</label>
+    <select id="ct-rep" onchange="renderContact()">
+      <option value="all">All representatives</option>
+      <option value="Ahmed Ali">Ahmed Ali</option>
+      <option value="Ahmed Abd El Razek">Ahmed Abd El Razek</option>
+      <option value="Ahmed Magdy">Ahmed Magdy</option>
+      <option value="Hassan Nasser">Hassan Nasser</option>
+      <option value="Hassan Gamal">Hassan Gamal</option>
+      <option value="Sameh Ali">Sameh Ali</option>
+    </select>
+    <label>Status</label>
+    <select id="ct-status" onchange="renderContact()">
+      <option value="all">All statuses</option>
+      <option>Pre-Lead</option><option>Lead</option><option>In Progress</option>
+      <option>Prospect</option><option>Hot Prospect</option><option>Lost</option><option>Junk</option>
+    </select>
+  </div>
+  <div class="kpi-grid" id="ct-kpis"></div>
+  <div class="two-col">
+    <div class="chart-card">
+      <div class="chart-title">Overall contact split</div>
+      <div class="legend" id="ct-pie-legend"></div>
+      <div style="position:relative;width:100%;height:200px"><canvas id="c-pie" role="img" aria-label="Donut chart contacted vs not contacted"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Contact rate per rep</div>
+      <div id="ct-bars"></div>
+    </div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">Contacted vs not contacted — per representative</div>
+    <div style="position:relative;width:100%;height:240px"><canvas id="c-ct-group" role="img" aria-label="Grouped bar chart contact by rep"></canvas></div>
+  </div>
+</div>
+
+<!-- ══════ TAB 3: GAP ANALYSIS ══════ -->
+<div class="section" id="tab-gap">
+  <div class="filter-row">
+    <label>Rep</label>
+    <select id="gp-rep" onchange="renderGap()">
+      <option value="all">All representatives</option>
+      <option value="Ahmed Ali">Ahmed Ali</option>
+      <option value="Ahmed Abd El Razek">Ahmed Abd El Razek</option>
+      <option value="Ahmed Magdy">Ahmed Magdy</option>
+      <option value="Hassan Nasser">Hassan Nasser</option>
+      <option value="Hassan Gamal">Hassan Gamal</option>
+      <option value="Sameh Ali">Sameh Ali</option>
+    </select>
+  </div>
+  <div class="kpi-grid" id="gp-kpis"></div>
+  <div class="chart-card">
+    <div class="chart-title">Contact gap breakdown per representative</div>
+    <div id="gp-bars"></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">Contact gap — stacked view</div>
+    <div style="position:relative;width:100%;height:260px"><canvas id="c-gp-stack" role="img" aria-label="Stacked bar chart contact gap per rep"></canvas></div>
+  </div>
+</div>
+
+<!-- ══════ TAB 4: AGING & TIMELINE ══════ -->
+<div class="section" id="tab-aging">
+  <div class="filter-row">
+    <label>Rep</label>
+    <select id="ag-rep" onchange="renderAging()">
+      <option value="all">All representatives</option>
+      <option value="Ahmed Ali">Ahmed Ali</option>
+      <option value="Ahmed Abd El Razek">Ahmed Abd El Razek</option>
+      <option value="Ahmed Magdy">Ahmed Magdy</option>
+      <option value="Hassan Nasser">Hassan Nasser</option>
+      <option value="Hassan Gamal">Hassan Gamal</option>
+      <option value="Sameh Ali">Sameh Ali</option>
+    </select>
+    <label>Period</label>
+    <select id="ag-period" onchange="renderAging()">
+      <option value="all">All time</option>
+      <option value="week">This week</option>
+      <option value="month">This month</option>
+      <option value="3m">Last 3 months</option>
+      <option value="6m">Last 6 months</option>
+    </select>
+  </div>
+  <div class="aging-grid" id="ag-cards"></div>
+  <div class="chart-card">
+    <div class="chart-title">Contacts per month — last 12 months</div>
+    <div style="position:relative;width:100%;height:220px"><canvas id="c-monthly" role="img" aria-label="Line chart contacts per month"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">Aging distribution — time since last contact</div>
+    <div class="legend" id="ag-legend"></div>
+    <div style="position:relative;width:100%;height:220px"><canvas id="c-aging" role="img" aria-label="Bar chart aging distribution"></canvas></div>
+  </div>
+</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const REPS_DISPLAY = ['Ahmed Ali','Ahmed Abd El Razek','Ahmed Magdy','Hassan Nasser','Hassan Gamal','Sameh Ali'];
+const REPS_KEY = {'Ahmed Ali':'Ahmed Ali','Ahmed Abd El Razek':'Ahmed Abd El Razek','Ahmed Magdy':'Ahmed Magdy','Hassan Nasser':'Hassan Nasser','Hassan Gamal':'Hassan Gamal','Sameh Ali':'Sameh Ali'};
+
+const DATA = {
+  byRepStatus: {
+    'Ahmed Ali':         {'Pre-Lead':468,'Lead':0,'In Progress':9,'Prospect':44,'Hot Prospect':12,'Lost':0,'Junk':0},
+    'Ahmed Abd El Razek':{'Pre-Lead':10,'Lead':592,'In Progress':0,'Prospect':0,'Hot Prospect':0,'Lost':0,'Junk':0},
+    'Ahmed Magdy':       {'Pre-Lead':409,'Lead':593,'In Progress':715,'Prospect':297,'Hot Prospect':134,'Lost':0,'Junk':0},
+    'Hassan Nasser':     {'Pre-Lead':1487,'Lead':519,'In Progress':60,'Prospect':17,'Hot Prospect':14,'Lost':0,'Junk':5},
+    'Hassan Gamal':      {'Pre-Lead':136,'Lead':188,'In Progress':0,'Prospect':0,'Hot Prospect':0,'Lost':1,'Junk':0},
+    'Sameh Ali':         {'Pre-Lead':1725,'Lead':665,'In Progress':116,'Prospect':11,'Hot Prospect':6,'Lost':0,'Junk':0}
+  },
+  total:     {'Ahmed Ali':533,'Ahmed Abd El Razek':602,'Ahmed Magdy':2148,'Hassan Nasser':2102,'Hassan Gamal':325,'Sameh Ali':2523},
+  contacted: {'Ahmed Ali':435,'Ahmed Abd El Razek':572,'Ahmed Magdy':2052,'Hassan Nasser':1021,'Hassan Gamal':249,'Sameh Ali':1036},
+  aging: {
+    'Ahmed Ali':         {'This week':12,'This month':18,'1-3 months':22,'3-6 months':80,'6+ months':303,'Not contacted':98},
+    'Ahmed Abd El Razek':{'This week':5,'This month':25,'1-3 months':20,'3-6 months':90,'6+ months':432,'Not contacted':30},
+    'Ahmed Magdy':       {'This week':15,'This month':28,'1-3 months':10,'3-6 months':180,'6+ months':1819,'Not contacted':96},
+    'Hassan Nasser':     {'This week':10,'This month':18,'1-3 months':8,'3-6 months':130,'6+ months':855,'Not contacted':1081},
+    'Hassan Gamal':      {'This week':4,'This month':8,'1-3 months':5,'3-6 months':60,'6+ months':172,'Not contacted':76},
+    'Sameh Ali':         {'This week':3,'This month':5,'1-3 months':1,'3-6 months':26,'6+ months':1001,'Not contacted':1487}
+  },
+  monthly: {
+    '2025-06':448,'2025-07':616,'2025-08':168,'2025-09':1093,
+    '2025-10':324,'2025-11':103,'2025-12':325,
+    '2026-01':143,'2026-02':31,'2026-03':31,'2026-04':145,'2026-05':13
+  },
+  monthlyByRep: {
+    'Ahmed Ali':    {'2025-06':20,'2025-07':30,'2025-08':10,'2025-09':90,'2025-10':40,'2025-11':15,'2025-12':60,'2026-01':35,'2026-02':10,'2026-03':8,'2026-04':35,'2026-05':3},
+    'Ahmed Abd El Razek':{'2025-06':15,'2025-07':20,'2025-08':8,'2025-09':80,'2025-10':30,'2025-11':10,'2025-12':50,'2026-01':28,'2026-02':6,'2026-03':6,'2026-04':30,'2026-05':2},
+    'Ahmed Magdy':  {'2025-06':180,'2025-07':250,'2025-08':70,'2025-09':400,'2025-10':120,'2025-11':40,'2025-12':110,'2026-01':50,'2026-02':10,'2026-03':10,'2026-04':50,'2026-05':5},
+    'Hassan Nasser':{'2025-06':100,'2025-07':150,'2025-08':40,'2025-09':280,'2025-10':80,'2025-11':20,'2025-12':60,'2026-01':20,'2026-02':3,'2026-03':3,'2026-04':15,'2026-05':1},
+    'Hassan Gamal': {'2025-06':18,'2025-07':22,'2025-08':10,'2025-09':60,'2025-10':20,'2025-11':8,'2025-12':20,'2026-01':5,'2026-02':1,'2026-03':2,'2026-04':8,'2026-05':1},
+    'Sameh Ali':    {'2025-06':115,'2025-07':144,'2025-08':30,'2025-09':183,'2025-10':34,'2025-11':10,'2025-12':25,'2026-01':5,'2026-02':1,'2026-03':2,'2026-04':7,'2026-05':1}
+  }
+};
+
+const STATUSES = ['Pre-Lead','Lead','In Progress','Prospect','Hot Prospect','Lost','Junk'];
+const S_COLORS  = {'Pre-Lead':'#888780','Lead':'#378ADD','In Progress':'#1D9E75','Prospect':'#BA7517','Hot Prospect':'#D85A30','Lost':'#E24B4A','Junk':'#B4B2A9'};
+const AGE_BUCKETS = ['This week','This month','1-3 months','3-6 months','6+ months','Not contacted'];
+const AGE_COLORS  = ['#1D9E75','#5DCAA5','#BA7517','#D85A30','#E24B4A','#888780'];
+const MONTHS = ['2025-06','2025-07','2025-08','2025-09','2025-10','2025-11','2025-12','2026-01','2026-02','2026-03','2026-04','2026-05'];
+const MONTH_LABELS = ['Jun 25','Jul 25','Aug 25','Sep 25','Oct 25','Nov 25','Dec 25','Jan 26','Feb 26','Mar 26','Apr 26','May 26'];
+
+const charts = {};
+function dc(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
+
+function getReps(v){ return v==='all'?REPS_DISPLAY:[v]; }
+
+function getStatusFiltered(reps,st){
+  let out={};
+  reps.forEach(r=>{
+    out[r]={};
+    STATUSES.forEach(s=>{
+      if(st==='all'||st===s) out[r][s]=DATA.byRepStatus[r][s]||0;
+    });
+  });
+  return out;
+}
+
+function repTotal(d,r){ return Object.values(d[r]).reduce((a,b)=>a+b,0); }
+
+function switchTab(name){
+  const names=['overview','contact','gap','aging'];
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',names[i]===name));
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  if(name==='overview')renderOverview();
+  if(name==='contact')renderContact();
+  if(name==='gap')renderGap();
+  if(name==='aging')renderAging();
+}
+
+/* ── OVERVIEW ── */
+function renderOverview(){
+  const rep=document.getElementById('ov-rep').value;
+  const st=document.getElementById('ov-status').value;
+  const reps=getReps(rep);
+  const data=getStatusFiltered(reps,st);
+  const totals=reps.map(r=>repTotal(data,r));
+  const grand=totals.reduce((a,b)=>a+b,0);
+  const statuses=st==='all'?STATUSES:[st];
+
+  document.getElementById('ov-kpis').innerHTML=`
+    <div class="kpi"><div class="kpi-label">Total clients</div><div class="kpi-val">${grand.toLocaleString()}</div></div>
+    <div class="kpi"><div class="kpi-label">Representatives</div><div class="kpi-val">${reps.length}</div></div>
+    <div class="kpi"><div class="kpi-label">Avg per rep</div><div class="kpi-val">${Math.round(grand/reps.length).toLocaleString()}</div></div>
+    <div class="kpi"><div class="kpi-label">Statuses shown</div><div class="kpi-val" style="font-size:16px">${st==='all'?'All':st}</div></div>
+  `;
+
+  dc('c-repbar');
+  charts['c-repbar']=new Chart(document.getElementById('c-repbar'),{
+    type:'bar',
+    data:{labels:reps.map(r=>r.replace(' Abd El Razek','\nAbd El Razek')),datasets:[{label:'Clients',data:totals,backgroundColor:'#185FA5',borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{color:'#888',font:{size:10}}},x:{ticks:{color:'#888',font:{size:10}}}}}
+  });
+
+  document.getElementById('ov-legend').innerHTML=statuses.map(s=>`<span><span class="ld" style="background:${S_COLORS[s]}"></span>${s}</span>`).join('');
+  dc('c-stack');
+  charts['c-stack']=new Chart(document.getElementById('c-stack'),{
+    type:'bar',
+    data:{labels:reps.map(r=>r.split(' ').slice(0,2).join(' ')),
+      datasets:statuses.map(s=>({label:s,data:reps.map(r=>data[r][s]||0),backgroundColor:S_COLORS[s],borderRadius:2}))
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{stacked:true,ticks:{color:'#888',font:{size:10}}},y:{stacked:true,beginAtZero:true,ticks:{color:'#888',font:{size:10}}}}}
+  });
+}
+
+/* ── CONTACT ACTIVITY ── */
+function renderContact(){
+  const rep=document.getElementById('ct-rep').value;
+  const st=document.getElementById('ct-status').value;
+  const reps=getReps(rep);
+
+  let totalT=0,totalC=0;
+  reps.forEach(r=>{
+    const d=getStatusFiltered([r],st);
+    const t=repTotal(d,r);
+    const ratio=DATA.contacted[r]/DATA.total[r];
+    totalT+=t; totalC+=Math.round(t*ratio);
+  });
+  const notC=totalT-totalC;
+  const pct=totalT?Math.round(totalC/totalT*100):0;
+
+  document.getElementById('ct-kpis').innerHTML=`
+    <div class="kpi"><div class="kpi-label">Total clients</div><div class="kpi-val">${totalT.toLocaleString()}</div><div class="kpi-sub">100%</div></div>
+    <div class="kpi"><div class="kpi-label">Contacted</div><div class="kpi-val" style="color:#1D9E75">${totalC.toLocaleString()}</div><div class="kpi-sub">${pct}% — Last Contact ≠ empty</div></div>
+    <div class="kpi"><div class="kpi-label">Not contacted</div><div class="kpi-val" style="color:#E24B4A">${notC.toLocaleString()}</div><div class="kpi-sub">${100-pct}% — Last Contact is empty</div></div>
+    <div class="kpi"><div class="kpi-label">Contact gap</div><div class="kpi-val" style="color:#BA7517">${notC.toLocaleString()}</div><div class="kpi-sub">clients need follow-up</div></div>
+  `;
+
+  document.getElementById('ct-pie-legend').innerHTML=`
+    <span><span class="ld" style="background:#1D9E75"></span>Contacted ${pct}%</span>
+    <span><span class="ld" style="background:#E24B4A"></span>Not contacted ${100-pct}%</span>
+  `;
+  dc('c-pie');
+  charts['c-pie']=new Chart(document.getElementById('c-pie'),{
+    type:'doughnut',
+    data:{labels:['Contacted','Not contacted'],datasets:[{data:[totalC,notC],backgroundColor:['#1D9E75','#E24B4A'],borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{display:false}}}
+  });
+
+  document.getElementById('ct-bars').innerHTML=reps.map(r=>{
+    const c=DATA.contacted[r],t=DATA.total[r],pc=Math.round(c/t*100);
+    return `<div class="bar-row">
+      <div class="bar-label"><span>${r.split(' ').slice(0,2).join(' ')}</span><span style="font-weight:500;color:var(--color-text-primary)">${pc}%</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:${pc}%;background:#1D9E75"></div></div>
+      <div class="bar-nums"><span style="color:#1D9E75">${c.toLocaleString()} contacted</span><span style="color:#E24B4A">${(t-c).toLocaleString()} not</span></div>
+    </div>`;
+  }).join('');
+
+  dc('c-ct-group');
+  charts['c-ct-group']=new Chart(document.getElementById('c-ct-group'),{
+    type:'bar',
+    data:{labels:reps.map(r=>r.split(' ').slice(0,2).join(' ')),
+      datasets:[
+        {label:'Contacted',data:reps.map(r=>DATA.contacted[r]),backgroundColor:'#1D9E75',borderRadius:3},
+        {label:'Not contacted',data:reps.map(r=>DATA.total[r]-DATA.contacted[r]),backgroundColor:'#E24B4A',borderRadius:3}
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{stacked:true,ticks:{color:'#888',font:{size:10}}},y:{stacked:true,beginAtZero:true,ticks:{color:'#888',font:{size:10}}}}}
+  });
+}
+
+/* ── GAP ANALYSIS ── */
+function renderGap(){
+  const rep=document.getElementById('gp-rep').value;
+  const reps=getReps(rep);
+  const totalT=reps.reduce((a,r)=>a+DATA.total[r],0);
+  const totalC=reps.reduce((a,r)=>a+DATA.contacted[r],0);
+  const notC=totalT-totalC;
+  const pctC=totalT?+(totalC/totalT*100).toFixed(1):0;
+  const pctN=+(100-pctC).toFixed(1);
+
+  document.getElementById('gp-kpis').innerHTML=`
+    <div class="kpi"><div class="kpi-label">Total clients</div><div class="kpi-val">${totalT.toLocaleString()}</div><div class="kpi-sub">100%</div></div>
+    <div class="kpi"><div class="kpi-label">Contacted</div><div class="kpi-val" style="color:#1D9E75">${totalC.toLocaleString()}</div><div class="kpi-sub">${pctC}%</div></div>
+    <div class="kpi"><div class="kpi-label">Not contacted</div><div class="kpi-val" style="color:#E24B4A">${notC.toLocaleString()}</div><div class="kpi-sub">${pctN}%</div></div>
+    <div class="kpi"><div class="kpi-label">Gap size</div><div class="kpi-val" style="color:#BA7517">${notC.toLocaleString()}</div><div class="kpi-sub">need immediate outreach</div></div>
+  `;
+
+  document.getElementById('gp-bars').innerHTML=reps.map(r=>{
+    const c=DATA.contacted[r],t=DATA.total[r],n=t-c;
+    const pc=Math.round(c/t*100),pn=100-pc;
+    const priority=pn>=60?'High':pn>=30?'Medium':'Low';
+    const pcol=pn>=60?'#E24B4A':pn>=30?'#BA7517':'#1D9E75';
+    return `<div class="bar-row">
+      <div class="bar-label">
+        <span style="font-weight:500">${r}</span>
+        <span><span class="badge" style="background:${pcol}22;color:${pcol}">${priority} priority</span> &nbsp; gap: <strong style="color:#E24B4A">${n.toLocaleString()}</strong> (${pn}%)</span>
+      </div>
+      <div class="bar-track" style="height:10px">
+        <div class="bar-fill" style="width:${pc}%;background:#1D9E75"></div>
+      </div>
+      <div class="bar-nums"><span style="color:#1D9E75">${pc}% contacted (${c.toLocaleString()})</span><span style="color:#E24B4A">${pn}% not contacted (${n.toLocaleString()})</span></div>
+    </div>`;
+  }).join('');
+
+  dc('c-gp-stack');
+  charts['c-gp-stack']=new Chart(document.getElementById('c-gp-stack'),{
+    type:'bar',
+    data:{labels:reps.map(r=>r.split(' ').slice(0,2).join(' ')),
+      datasets:[
+        {label:'Contacted',data:reps.map(r=>DATA.contacted[r]),backgroundColor:'#1D9E75',borderRadius:3},
+        {label:'Not contacted',data:reps.map(r=>DATA.total[r]-DATA.contacted[r]),backgroundColor:'#E24B4A',borderRadius:3}
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{stacked:true,ticks:{color:'#888',font:{size:10}}},y:{stacked:true,beginAtZero:true,ticks:{color:'#888',font:{size:10}}}},
+      indexAxis:'y'}
+  });
+}
+
+/* ── AGING & TIMELINE ── */
+function renderAging(){
+  const rep=document.getElementById('ag-rep').value;
+  const period=document.getElementById('ag-period').value;
+  const reps=getReps(rep);
+
+  const agg={};
+  AGE_BUCKETS.forEach(b=>agg[b]=0);
+  reps.forEach(r=>AGE_BUCKETS.forEach(b=>agg[b]+=(DATA.aging[r][b]||0)));
+
+  const periodMap={'week':'This week','month':'This month','3m':null,'6m':null};
+  const agingColors={'This week':'#1D9E75','This month':'#5DCAA5','1-3 months':'#BA7517','3-6 months':'#D85A30','6+ months':'#E24B4A','Not contacted':'#888780'};
+
+  const showBuckets=period==='all'?AGE_BUCKETS:period==='week'?['This week','Not contacted']:period==='month'?['This week','This month','Not contacted']:period==='3m'?['This week','This month','1-3 months','Not contacted']:AGE_BUCKETS;
+
+  document.getElementById('ag-cards').innerHTML=AGE_BUCKETS.map(b=>{
+    const col=agingColors[b];
+    return `<div class="aging-card" style="background:${col}18;border:.5px solid ${col}44">
+      <div class="aging-num" style="color:${col}">${agg[b].toLocaleString()}</div>
+      <div class="aging-lbl" style="color:${col}">${b}</div>
+    </div>`;
+  }).join('');
+
+  const months=MONTHS;
+  const mLabels=MONTH_LABELS;
+  let mData;
+  if(rep==='all'){
+    mData=months.map(m=>DATA.monthly[m]||0);
+  } else {
+    mData=months.map(m=>(DATA.monthlyByRep[rep]&&DATA.monthlyByRep[rep][m])||0);
+  }
+
+  dc('c-monthly');
+  charts['c-monthly']=new Chart(document.getElementById('c-monthly'),{
+    type:'line',
+    data:{labels:mLabels,datasets:[{label:'Contacts',data:mData,borderColor:'#185FA5',backgroundColor:'#185FA520',fill:true,tension:.3,pointRadius:4,pointBackgroundColor:'#185FA5'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{color:'#888',font:{size:10}}},x:{ticks:{color:'#888',font:{size:10},maxRotation:45}}}}
+  });
+
+  document.getElementById('ag-legend').innerHTML=showBuckets.map(b=>`<span><span class="ld" style="background:${agingColors[b]}"></span>${b} (${agg[b].toLocaleString()})</span>`).join('');
+  dc('c-aging');
+  charts['c-aging']=new Chart(document.getElementById('c-aging'),{
+    type:'bar',
+    data:{labels:showBuckets,datasets:[{label:'Clients',data:showBuckets.map(b=>agg[b]),backgroundColor:showBuckets.map(b=>agingColors[b]),borderRadius:5}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{color:'#888',font:{size:10}}},x:{ticks:{color:'#888',font:{size:10}}}}}
+  });
+}
+
+renderOverview();
+</script>
